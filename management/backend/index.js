@@ -1,3 +1,5 @@
+// management\backend\index.js
+
 // Load environment variables from .env file
 import dotenv from "dotenv";
 dotenv.config();
@@ -26,5 +28,7 @@ app.get("/", (_req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server is listening on http://localhost:${PORT}`);
   console.log(`🔗 API is available at http://localhost:${PORT}/api`);
-  console.log(`🔗 Products are available at http://localhost:${PORT}/products`);
+  console.log(
+    `🔗 Products are available at http://localhost:${PORT}/api/products`
+  );
 });

@@ -1,11 +1,13 @@
-// routes/product.routes.ts
+// management\backend\routes\product.routes.js
 import { Router } from "express";
-import { getAllProducts } from "../controllers/product.controller.js";
+import {
+  getAllProducts,
+  postCreateProduct,
+} from "../controllers/product.controller.js";
 
 const router = Router();
-
-router.get("/produc", getAllProducts);
-
-// Export the router to be used in the main app
+console.info("###\tproduct.routes.js\n");
+router.get("/", getAllProducts);
+router.post("/create-product", postCreateProduct);
 
 export default router;

@@ -1,3 +1,5 @@
+import { fillFormWithData } from "./form-fill-helpers.js";
+
 const form = document.getElementById("productForm");
 const urlParams = new URLSearchParams(window.location.search);
 const isEditMode = urlParams.has("id");
@@ -5,6 +7,9 @@ const productId = urlParams.get("id");
 const coverIndex = 0;
 const PRESELECTED_MEDIA = [];
 const MAX_SLOTS = 8;
+const API_BASE = `http://localhost:${
+  localStorage.getItem("serverPort") || "3001"
+}`;
 
 function initMediaSlots() {
   const mediaPreviewContainer = document.getElementById("mediaPreview");
@@ -122,114 +127,14 @@ function removeImage(index) {
   initMediaSlots(); // UI neu rendern
 }
 
-function fillFormWithData(product) {
-  const f = form.elements;
-
-  // --- Allgemeine Informationen ---
-  if (f["name"]) f["name"].value = product.name || "";
-  if (f["productNumber"])
-    f["productNumber"].value = product.productNumber || "";
-  if (f["stock"]) f["stock"].value = product.stock ?? "";
-  if (f["taxId"]) f["taxId"].value = product.taxId || "";
-  if (f["manufacturerId"])
-    f["manufacturerId"].value = product.manufacturerId || "";
-  if (f["description"]) f["description"].value = product.description || "";
-  if (f["highlight"]) f["highlight"].checked = product.highlight || false;
-  if (f["active"]) f["active"].checked = product.active !== false;
-
-  // --- Preise ---
-  if (f["priceNet"]) f["priceNet"].value = product.price?.[0]?.net ?? "";
-  if (f["priceGross"]) f["priceGross"].value = product.price?.[0]?.gross ?? "";
-
-  // --- Erweiterte Informationen ---
-  if (f["ean"]) f["ean"].value = product.ean || "";
-  if (f["length"]) f["length"].value = product.length || "";
-  if (f["width"]) f["width"].value = product.width || "";
-  if (f["height"]) f["height"].value = product.height || "";
-  if (f["weight"]) f["weight"].value = product.weight || "";
-  if (f["metaTitle"]) f["metaTitle"].value = product.metaTitle || "";
-  if (f["metaDescription"])
-    f["metaDescription"].value = product.metaDescription || "";
-  if (f["category"]) f["category"].value = product.category || "";
-  if (f["tags"]) f["tags"].value = product.tags?.join(", ") || "";
-  if (f["searchKeywords"])
-    f["searchKeywords"].value = product.searchKeywords?.join(", ") || "";
-  if (f["releaseDate"])
-    f["releaseDate"].value = product.releaseDate?.slice(0, 10) || "";
-  if (f["gtin"]) f["gtin"].value = product.gtin || "";
-  if (f["manufacturerProductNumber"])
-    f["manufacturerProductNumber"].value =
-      product.manufacturerProductNumber || "";
-
-  // --- Lieferbarkeit ---
-  if (f["minPurchase"]) f["minPurchase"].value = product.minPurchase || "";
-  if (f["maxPurchase"]) f["maxPurchase"].value = product.maxPurchase || "";
-  if (f["purchaseSteps"])
-    f["purchaseSteps"].value = product.purchaseSteps || "";
-  if (f["restockTime"]) f["restockTime"].value = product.restockTime || "";
-  if (f["deliveryTimeId"])
-    f["deliveryTimeId"].value = product.deliveryTimeId || "";
-  if (f["isCloseout"]) f["isCloseout"].checked = product.isCloseout || false;
-  if (f["freeShipping"])
-    f["freeShipping"].checked = product.freeShipping || false;
-
-  // --- Sichtbarkeit ---
-  if (f["activeAllSalesChannels"])
-    f["activeAllSalesChannels"].checked =
-      product.activeAllSalesChannels ?? true;
-
-  // --- Mehrfachauswahl: Sales Channels ---
-  if (Array.isArray(product.salesChannels) && f["salesChannels"]) {
-    Array.from(f["salesChannels"].options).forEach((opt) => {
-      opt.selected = product.salesChannels.includes(opt.value);
-    });
-  }
-
-  // console.log("[STEP 4] fillFormWithData gestartet");
-
-  PRESELECTED_MEDIA.length = 0;
-  if (Array.isArray(product.media)) {
-    // console.log(
-    //   "[STEP 5] Produkt hat Medien:",
-    //   product.media.length,
-    //   "Einträge"
-    // );
-
-    for (const m of product.media) {
-      PRESELECTED_MEDIA.push({
-        url: m.url || m.thumbnailUrl || "",
-        mediaId: m.mediaId || m.id,
-      });
-    }
-
-    const cover = product.media.find((m) => m.isCover);
-    if (cover) {
-      const index = PRESELECTED_MEDIA.findIndex(
-        (m) => m.mediaId === (cover.mediaId || cover.id)
-      );
-      if (index > 0) {
-        const [c] = PRESELECTED_MEDIA.splice(index, 1);
-        PRESELECTED_MEDIA.unshift(c);
-      }
-      // console.log(
-      //   "[STEP 6] Cover erkannt und an erster Stelle gesetzt:",
-      //   PRESELECTED_MEDIA[0]
-      // );
-    }
-  } else {
-    // console.warn(
-    //   "[STEP 5] Keine Medien gefunden – es wird nur Placeholder angezeigt"
-    // );
-  }
-
-  requestAnimationFrame(() => {
-    // console.log("[STEP 7] initMediaSlots wird aufgerufen (nach DOM ready)");
-    initMediaSlots();
-  });
+if (isEditMode && productId) {
+  const product = await fetchProduct(productId);
+  fillFormWithData(product, form, PRESELECTED_MEDIA);
 }
 
 async function fetchProduct(id) {
-  const res = await fetch(`/product/${id}`);
+  if (!id) throw new Error("Kein Produkt-ID übergeben (Edit-Modus erwartet).");
+  const res = await fetch(`${API_BASE}/api/products/${id}`);
   if (!res.ok) throw new Error("Produkt nicht gefunden.");
   return await res.json();
 }
@@ -237,7 +142,6 @@ async function fetchProduct(id) {
 form.onsubmit = async function (e) {
   e.preventDefault();
   const formData = new FormData(this);
-
   const gross = parseFloat(formData.get("priceGross")) || 19.99;
   const net =
     parseFloat(formData.get("priceNet")) ||
@@ -273,7 +177,9 @@ form.onsubmit = async function (e) {
     body.coverImage = coverImage;
   }
 
-  const url = isEditMode ? `/product/${productId}` : "/create-product";
+  const url = isEditMode
+    ? `${API_BASE}/api/products/${productId}`
+    : `${API_BASE}/api/products/create-product`;
   const method = isEditMode ? "PUT" : "POST";
 
   const res = await fetch(url, {
@@ -311,39 +217,45 @@ function fillDummyData() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // console.log("[STEP 1] DOMContentLoaded gestartet");
+  console.log("[STEP 1] DOMContentLoaded gestartet");
+
   const submitBtn = form.querySelector("button[type='submit']");
   if (submitBtn) {
     submitBtn.textContent = isEditMode
       ? "Produkt aktualisieren"
       : "Produkt anlegen";
   }
-  if (isEditMode) {
-    // console.log("[STEP 2] Edit-Modus erkannt – Produktdaten werden geladen");
+
+  if (isEditMode && productId) {
+    console.log("[STEP 2] Edit-Modus erkannt – Produktdaten werden geladen");
     try {
       const produkt = await fetchProduct(productId);
-      // console.log("[STEP 3] Produktdaten erfolgreich geladen:", produkt);
-      fillFormWithData(produkt);
+      console.log("[STEP 3] Produktdaten erfolgreich geladen:", produkt);
+      // امضای صحیح با فرم و آرایه مدیا
+      fillFormWithData(produkt, form, PRESELECTED_MEDIA);
     } catch (err) {
       console.error("[ERROR] Produkt konnte nicht geladen werden:", err);
+      // (اختیاری) نمایش پیام خطا در UI
+      // showFormAlert("danger", "Produkt konnte nicht geladen werden.");
     }
-  } else {
-    // console.log("[STEP 2] Create-Modus erkannt – Demodaten werden verwendet");
-
-    PRESELECTED_MEDIA.push(
-      {
-        url: "http://shopware.local/media/c5/bc/f2/1754042050/product06.png?ts=1754042050",
-        mediaId: "0198650da1ac7f688a7918cda7b621ea",
-      },
-      {
-        url: "http://shopware.local/thumbnail/01/cb/24/1754042050/product02_280x280.png?ts=1754042064",
-        mediaId: "0198650ddfa670dbac098a1992f3431a",
-      }
-    );
-
-    // console.log("[STEP 3] Demodaten gesetzt, initMediaSlots wird aufgerufen");
-    initMediaSlots();
-
-    fillDummyData();
+    return; // در حالت ویرایش، از اینجا خارج شو
   }
+
+  // Create-Mode
+  console.log("[STEP 2] Create-Modus erkannt – Demodaten werden verwendet");
+
+  PRESELECTED_MEDIA.push(
+    {
+      url: "http://shopware.local/media/c5/bc/f2/1754042050/product06.png?ts=1754042050",
+      mediaId: "0198650da1ac7f688a7918cda7b621ea",
+    },
+    {
+      url: "http://shopware.local/thumbnail/01/cb/24/1754042050/product02_280x280.png?ts=1754042064",
+      mediaId: "0198650ddfa670dbac098a1992f3431a",
+    }
+  );
+
+  console.log("[STEP 3] Demodaten gesetzt, initMediaSlots wird aufgerufen");
+  initMediaSlots();
+  fillDummyData(); // اگر پارامتر می‌گیرد، اینجا مطابق امضایش تغییر بده
 });

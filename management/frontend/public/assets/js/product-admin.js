@@ -1,9 +1,10 @@
 const msg = localStorage.getItem("productMessage");
 const serverPort = localStorage.getItem("serverPort") || "3001";
+const listBox = document.getElementById("listResponse");
+const tableEl = document.getElementById("productTable");
 
 if (msg) {
-  const box = document.getElementById("listResponse");
-  box.innerHTML = `<div class="alert alert-success">${msg}</div>`;
+  listBox.innerHTML = `<div class="alert alert-success">${msg}</div>`;
   localStorage.removeItem("productMessage");
 }
 
@@ -21,7 +22,7 @@ function renderProductTable(products) {
     <th>Bestand</th>
     <th>Preis</th>
     <th>Status</th>
-</tr></thead>`;
+  </tr></thead>`;
 
   let rows = products
     .map((p, i) => {
@@ -32,56 +33,59 @@ function renderProductTable(products) {
         Array.isArray(p.price) && p.price[0]?.gross
           ? p.price[0].gross + " €"
           : "-";
-      const status =
-        p.active === true
-          ? '<span class="badge bg-success">Aktiv</span>'
-          : p.active === false
-          ? '<span class="badge bg-secondary">Inaktiv</span>'
-          : "-";
+      let status;
+      if (p.active === true) {
+        status = '<span class="badge bg-success">Aktiv</span>';
+      } else if (p.active === false) {
+        status = '<span class="badge bg-secondary">Inaktiv</span>';
+      } else {
+        status = "-";
+      }
 
       return `<tr data-id="${p.id}">
-  <td><input type="checkbox" class="row-checkbox" data-id="${p.id}" /></td>
-  <td class="clickable-cell">${i + 1}</td>
-  <td class="clickable-cell">${nummer}</td>
-  <td class="clickable-cell">${name}</td>
-  <td class="clickable-cell">${stock}</td>
-  <td class="clickable-cell">${preis}</td>
-  <td class="clickable-cell">${status}</td>
-</tr>`;
+      <td><input type="checkbox" class="row-checkbox" data-id="${p.id}" /></td>
+      <td class="clickable-cell">${i + 1}</td>
+      <td class="clickable-cell">${nummer}</td>
+      <td class="clickable-cell">${name}</td>
+      <td class="clickable-cell">${stock}</td>
+      <td class="clickable-cell">${preis}</td>
+      <td class="clickable-cell">${status}</td>
+    </tr>`;
     })
     .join("");
 
-  return `<div class="table-responsive">
-      <table class="table table-striped table-bordered align-middle">${thead}<tbody>${rows}</tbody></table>
-    </div>`;
+  return `${thead}<tbody>${rows}</tbody>`;
 }
 
 // Initiales Laden ohne Formular
+// Initiales Laden
 (async () => {
-  const box = document.getElementById("listResponse");
   try {
-    const data = await fetch(
-      "http://localhost:" + serverPort + "/api/products"
-    );
+    const res = await fetch(`http://localhost:${serverPort}/api/products`, {
+      cache: "no-store",
+    });
+    console.log("Lade Produkte von:", res.url);
 
-    console.log("Lade Produkte von:", data.url);
-    if (!data.ok) {
-      box.innerHTML = `<div class="alert alert-danger'>${await data.text()}</div>`;
+    if (!res.ok) {
+      // fixed missing quote in class:
+      listBox.innerHTML = `<div class="alert alert-danger">${await res.text()}</div>`;
       console.log(
         "Fehler beim Laden der Produkte:",
-        data.status,
-        data.statusText
+        res.status,
+        res.statusText
       );
       return;
     }
-    const json = await data.json(); // JSON-Antwort erwarten
-    const products = Array.isArray(json) ? json : json.data || []; // Sicherstellen, dass wir ein Array haben
 
-    // Tabelle rendern
-    box.innerHTML = renderProductTable(products);
+    const json = await res.json();
+    const products = Array.isArray(json) ? json : json.data || [];
+
+    // پیام‌ها در listBox، جدول در tableEl
+    tableEl.innerHTML = renderProductTable(products);
     setupCheckboxHandlers();
   } catch (err) {
-    box.innerHTML =
+    console.error("❌ Fehler beim Laden der Produkte:", err);
+    listBox.innerHTML =
       "<div class='alert alert-danger'>Fehler beim Laden der Produkte.</div>";
   }
 })();

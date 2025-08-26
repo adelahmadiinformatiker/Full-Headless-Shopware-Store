@@ -4,6 +4,52 @@
 
 # 📘 README: Local Domain & SSH Setup for Shopware (`shopware.local`)
 
+## Run Management (Backend & Admin UI)
+
+### 1) Backend
+
+```bash
+cd management/backend
+npm i
+# Ensure .env (e.g., PORT=3001) is set
+
+# Start normally
+npm start
+# or
+node index.js
+
+# (Optional) Development mode with auto-restart
+npm i -D nodemon
+npm run dev
+
+# Health check → http://localhost:3001/  (should show: "Backend is running")
+```
+
+### 2) Frontend (Admin UI)
+
+```bash
+cd management/frontend
+npm i
+npm run dev
+# Open → http://localhost:3002/
+```
+
+### 3) Troubleshooting
+
+If products list returns 404: fix route in management/backend/routes/product.routes.js
+
+Change:
+
+```bash
+router.get("/produc", getAllProducts);
+```
+
+to:
+
+```bash
+router.get("/", getAllProducts);
+```
+
 ## 🛠 Additional Notes (Find Your VM IP First!)
 
 Before any configuration, you need your Ubuntu VM's current IP address. This IP is required for SSH access and for mapping the local domain on your Windows client.
@@ -452,24 +498,6 @@ frontend-headless/
 - Avoid direct DOM manipulation except where necessary (e.g., for slick-carousel integration).
 - Use React refs for third-party library hooks.
 - Keep styles modular and scoped to components.
-
----
-
-## 🚀 How to Start the Project
-
-1. Install dependencies (if any):
-   ```bash
-   npm install
-   ```
-2. Start the backend server:
-   ```bash
-   node external-node-layer/club-manager-sync/server.js
-   # or use npm start if defined
-   ```
-3. Open the UI in your browser:
-   ```
-   http://localhost:5000/ui
-   ```
 
 ---
 
