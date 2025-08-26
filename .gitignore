@@ -1,0 +1,14 @@
+# Ignore installed packages
+node_modules/
+**/node_modules/
+
+# Secret configuration file
+external-node-layer/club-manager-sync/.env
+
+# System and IDE-related outputs
+.DS_Store
+*.log
+.env
+dist/
+build/
+coverage/

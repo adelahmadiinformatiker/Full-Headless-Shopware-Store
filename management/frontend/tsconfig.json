@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    // Specify ECMAScript version target
+    "target": "ES2020",
+
+    // Use modern ES module system (for use with ts-node-esm)
+    "module": "ESNext",
+
+    // Enable interoperability between CommonJS and ESModules
+    "moduleResolution": "node",
+
+    // Allow importing of JSON modules
+    "resolveJsonModule": true,
+
+    // Allow default imports from CommonJS modules
+    "esModuleInterop": true,
+
+    // Enable source maps for debugging
+    "sourceMap": true,
+
+    // Strict type-checking
+    "strict": true,
+
+    // Disable type checking of .d.ts files in node_modules (faster build)
+    "skipLibCheck": true,
+
+    // Enable declaration file generation (optional)
+    "declaration": true,
+    "declarationMap": true
+  },
+  "exclude": ["node_modules", "dist"]
+}
