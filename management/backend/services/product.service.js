@@ -2,28 +2,31 @@
 
 import axios from "axios";
 import dotenv from "dotenv";
-import { resolveTaxId } from "../utils/taxResolver.js";
 
+import { normalizePrice } from "../utils/normalizePrice.js";
+import { resolveTaxId } from "../utils/taxResolver.js";
+import {
+  getManufacturerById,
+  createManufacturer,
+} from "../utils/manufacturer.js";
+import { getValidAccessToken } from "../utils/validAccessToken.js";
+import { syncProductMedia } from "../utils/productMedia.js";
 dotenv.config();
 
 const ENABLE_SERVER_LOGS = process.env.ENABLE_SERVER_LOGS === "true";
 const SHOPWARE_ADMIN_API_URL = process.env.SHOPWARE_API_BASE;
-const SHOPWARE_CLIENT_ID = process.env.SHOPWARE_CLIENT_ID;
-const SHOPWARE_CLIENT_SECRET = process.env.SHOPWARE_CLIENT_SECRET;
 
 // Export all functions
 export {
   createProduct,
-  // getProductById,
-  // updateProduct,
-  // deleteProduct,
+  getProductById,
+  updateProduct,
+  deleteProduct,
   listProducts,
 };
 
-// ************* Get all products from Shopware *************
+// *************     Get all products     *************
 async function listProducts() {
-  console.info("###\tproduct.service.js/listProducts()\n");
-
   try {
     const { access_token } = await getValidAccessToken();
     const response = await axios.get(
@@ -45,40 +48,13 @@ async function listProducts() {
   }
 }
 
-// *************     Product creation block     *************
-// << Begin of Product creation block
-
-function normalizePrice(price) {
-  // If already in Shopware array format, return as-is
-  if (
-    Array.isArray(price) &&
-    typeof price[0]?.gross === "number" &&
-    typeof price[0]?.net === "number"
-  ) {
-    return price;
-  }
-
-  // Accept numeric or [numeric]; mirror gross=net for simplicity
-  const numeric = Array.isArray(price) ? price[0] : price;
-  if (typeof numeric !== "number")
-    throw new Error("price must be a number or a Shopware price array");
-
-  return [
-    {
-      // Default EUR currency id in a fresh SW install; replace if yours differs
-      currencyId: "b7d2554b0ce847cd82f3ac9bd1c0dfca",
-      gross: numeric,
-      net: numeric,
-      linked: true,
-    },
-  ];
-}
-
-async function getManufacturerById(manufacturerId) {
-  const { access_token } = await getValidAccessToken();
+// *************    Get a single product  *************
+async function getProductById(id) {
   try {
-    const r = await axios.get(
-      `${SHOPWARE_ADMIN_API_URL}/product-manufacturer/${manufacturerId}`,
+    const { access_token } = await getValidAccessToken();
+
+    const response = await axios.get(
+      `${SHOPWARE_ADMIN_API_URL}/product/${id}?associations[media][]=&associations[cover][]`,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -86,35 +62,73 @@ async function getManufacturerById(manufacturerId) {
         },
       }
     );
-    return r.data?.data || null;
-  } catch (e) {
-    if (e.response?.status === 404) return null;
-    throw e;
+
+    const product = response.data.data;
+    const mediaIds = [];
+
+    if (product.cover?.mediaId) mediaIds.push(product.cover.mediaId);
+    if (Array.isArray(product.media)) {
+      for (const m of product.media) {
+        if (m.mediaId) mediaIds.push(m.mediaId);
+      }
+    }
+
+    const mediaResponse = await axios.post(
+      `${SHOPWARE_ADMIN_API_URL}/search/media`,
+      {
+        filter: [
+          {
+            type: "multi",
+            operator: "OR",
+            queries: [...new Set(mediaIds)].map((id) => ({
+              type: "equals",
+              field: "id",
+              value: id,
+            })),
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const mediaInfo = mediaResponse.data?.data || [];
+
+    if (Array.isArray(product.media)) {
+      product.media = product.media.map((m) => ({
+        mediaId: m.mediaId,
+        isCover: product.coverId === m.id,
+        url: mediaInfo.find((mi) => mi.id === m.mediaId)?.url || null,
+      }));
+    }
+
+    if (product.cover?.mediaId) {
+      product.cover.url =
+        mediaInfo.find((mi) => mi.id === product.cover.mediaId)?.url || null;
+    }
+    if (ENABLE_SERVER_LOGS) {
+      console.log("📤 getProductById → mapped media:", product.media);
+      console.log("📤 getProductById → cover:", product.cover);
+    }
+
+    return product;
+  } catch (error) {
+    console.error(
+      "Fehler beim Abrufen des Produkts:",
+      error.response?.data || error.message
+    );
+    throw error;
   }
 }
 
-async function createManufacturer(name) {
-  const { access_token } = await getValidAccessToken();
-  const r = await axios.post(
-    `${SHOPWARE_ADMIN_API_URL}/product-manufacturer?_response=detail`,
-    { name },
-    {
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    }
-  );
-  const id = r.data?.data?.id;
-  if (!id) throw new Error("Manufacturer creation failed");
-  return id;
-}
-
-// --- main ------------------------------------------------------------------
-
+// *************     Product creation     *************
 async function createProduct(payload) {
-  // Defensive: accept a plain object and extract fields
+  if (ENABLE_SERVER_LOGS) console.log("📦 createProduct payload:", payload);
+
   const {
     name,
     price,
@@ -125,11 +139,10 @@ async function createProduct(payload) {
     description,
     highlight,
     active,
-    coverImage, // mediaId (optional)
-    // media = [], // reserved for later (gallery)
+    coverImage,
+    media = [],
   } = payload || {};
 
-  // Basic validations for required fields
   if (!name) throw new Error("name is required");
   if (!productNumber) throw new Error("productNumber is required");
   if (stock === undefined || stock === null)
@@ -137,16 +150,21 @@ async function createProduct(payload) {
   if (price === undefined || price === null)
     throw new Error("price is required");
 
-  // Resolve taxId (can auto-discover if not provided)
-  const resolvedTaxId = await resolveTaxId(taxId);
+  const { access_token } = await getValidAccessToken();
 
-  // Ensure manufacturer exists (create a default one if missing/invalid)
+  const resolvedTaxId = await resolveTaxId(taxId, access_token);
+
   let validManufacturerId = manufacturerId;
-  if (!manufacturerId || !(await getManufacturerById(manufacturerId))) {
-    validManufacturerId = await createManufacturer("Default Manufacturer");
+  if (
+    !manufacturerId ||
+    !(await getManufacturerById(manufacturerId, access_token))
+  ) {
+    validManufacturerId = await createManufacturer(
+      "Default Manufacturer",
+      access_token
+    );
   }
 
-  // Prepare final payload
   const LIVE_VERSION_ID = "0fa91ce3e96a4bc2be4bd9ce752c3425";
   const body = {
     name,
@@ -163,12 +181,135 @@ async function createProduct(payload) {
     cover: coverImage ? { mediaId: coverImage } : undefined,
   };
 
-  const { access_token } = await getValidAccessToken();
+  const r = await axios.post(
+    `${SHOPWARE_ADMIN_API_URL}/product?_response=detail`,
+    body,
+    {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    }
+  );
 
+  const productId = r?.data?.data?.id;
+  if (!productId) {
+    if (r.data?.errors) return { errors: r.data.errors };
+    return null;
+  }
+
+  let galleryResult = { success: true, linked: 0, skipped: 0, errors: [] };
   try {
-    const r = await axios.post(
-      `${SHOPWARE_ADMIN_API_URL}/product?_response=detail`,
-      body,
+    galleryResult = await syncProductMedia(
+      productId,
+      access_token,
+      media,
+      coverImage
+    );
+    if (ENABLE_SERVER_LOGS)
+      console.log("🧩 gallery input:", { media, coverImage });
+  } catch (e) {
+    if (ENABLE_SERVER_LOGS) {
+      console.warn(
+        "⚠️ Gallery linking failed (non-fatal):",
+        e?.response?.data || e.message
+      );
+    }
+  }
+
+  if (ENABLE_SERVER_LOGS) {
+    console.log(
+      "✅ Created product:",
+      productId,
+      " | 🖼️ gallery:",
+      galleryResult
+    );
+  }
+
+  return { success: true, id: productId, gallery: galleryResult };
+}
+
+// *************      Delete Product      *************
+async function deleteProduct(id) {
+  // Diese Funktion löscht ein Produkt anhand der ID über die Shopware Admin API.
+  try {
+    const { access_token } = await getValidAccessToken();
+    const response = await axios.delete(
+      `${SHOPWARE_ADMIN_API_URL}/product/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: "application/json",
+        },
+      }
+    );
+    // Rückgabe: true bei Erfolg
+    if (response.status === 204) {
+      return { success: true };
+    }
+    return { success: false };
+  } catch (error) {
+    // Fehlerausgabe im Terminal
+    console.error(
+      "Fehler beim Löschen des Produkts:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+}
+
+// *************      Update Product      *************
+async function updateProduct(
+  id,
+  {
+    name,
+    price,
+    productNumber,
+    taxId,
+    stock,
+    manufacturerId,
+    description,
+    highlight,
+    active,
+    media = [],
+    coverImage,
+  }
+) {
+  try {
+    const { access_token } = await getValidAccessToken();
+
+    const resolvedTaxId = await resolveTaxId(taxId, access_token);
+
+    let validManufacturerId = manufacturerId;
+    if (
+      !manufacturerId ||
+      !(await getManufacturerById(manufacturerId, access_token))
+    ) {
+      validManufacturerId = await createManufacturer(
+        "Default Manufacturer",
+        access_token
+      );
+    }
+
+    const payload = {
+      name,
+      productNumber,
+      stock: Number(stock),
+      taxId: resolvedTaxId,
+      manufacturerId: validManufacturerId,
+      description: description || undefined,
+      highlight: !!highlight,
+      active: active !== false,
+      price: normalizePrice(price),
+    };
+
+    if (coverImage === null) payload.cover = null;
+    else if (coverImage) payload.cover = { mediaId: coverImage };
+
+    const response = await axios.patch(
+      `${SHOPWARE_ADMIN_API_URL}/product/${id}`,
+      payload,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -178,71 +319,21 @@ async function createProduct(payload) {
       }
     );
 
-    const productId = r?.data?.data?.id;
-    if (!productId) {
-      // If Shopware returned an error array, bubble it up for controller
-      if (r.data?.errors) return { errors: r.data.errors };
-      return null;
-    }
-    if (ENABLE_SERVER_LOGS) console.log("✅ Created product:", productId);
-    return productId;
-  } catch (err) {
-    // Re-throw with API error context so controller can shape the response
-    const apiErrors = err.response?.data?.errors;
-    const message = apiErrors?.[0]?.detail || err.message;
-    const error = new Error(message);
-    error.response = err.response; // keep original response for the controller
+    const galleryResult = await syncProductMedia(
+      id,
+      access_token,
+      media,
+      coverImage
+    );
+    if (ENABLE_SERVER_LOGS)
+      console.log("🧩 gallery input:", { media, coverImage });
+
+    return { success: true, data: response.data.data, gallery: galleryResult };
+  } catch (error) {
+    console.error(
+      "Fehler beim Aktualisieren des Produkts:",
+      error.response?.data || error.message
+    );
     throw error;
-  }
-}
-
-// End of Product creation block >>
-
-// =====================
-// Shopware Access Token Management
-// =====================
-
-let cachedToken = null; // Cache for the current access token
-let tokenExpiresAt = 0; // Timestamp when the token expires
-
-// Get valid access token from Shopware or return the cached token
-export async function getValidAccessToken() {
-  // Prüfen, ob ein gültiges Token im Speicher ist
-  const now = Math.floor(Date.now() / 1000); // Sekunden seit 1970
-  if (cachedToken && tokenExpiresAt - 10 > now) {
-    // Noch gültig (10 Sekunden Sicherheitspuffer)
-    return {
-      access_token: cachedToken,
-      expires_in: tokenExpiresAt - now,
-    };
-  }
-
-  // Neues Token holen
-  try {
-    const res = await axios.post(`${SHOPWARE_ADMIN_API_URL}/oauth/token`, {
-      grant_type: "client_credentials",
-      client_id: SHOPWARE_CLIENT_ID,
-      client_secret: SHOPWARE_CLIENT_SECRET,
-    });
-    cachedToken = res.data.access_token;
-    tokenExpiresAt = now + (res.data.expires_in || 600);
-    if (ENABLE_SERVER_LOGS) {
-      console.log(
-        "[shopwareClient.js] Neues Access Token geholt. Gültig bis:",
-        new Date(tokenExpiresAt * 1000).toISOString()
-      );
-    }
-    return {
-      access_token: cachedToken,
-      expires_in: res.data.expires_in,
-    };
-  } catch (err) {
-    if (ENABLE_SERVER_LOGS) {
-      console.error(
-        "[shopwareClient.js] Fehler beim Holen des Access Tokens:",
-        err.response?.data || err.message
-      );
-    }
-    throw err;
   }
 }

@@ -1,9 +1,7 @@
 // backend/src/lib/taxResolver.js
 
 import axios from "axios";
-import { getValidAccessToken } from "../services/product.service.js";
 
-// ---- Config knobs (via ENV) ----
 const SHOPWARE_ADMIN_API_URL = process.env.SHOPWARE_API_BASE;
 const TAX_ENV_ID = process.env.SHOPWARE_TAX_ID || "";
 const TAX_PREFERRED_NAME = process.env.SHOPWARE_TAX_NAME || "Standard rate";
@@ -70,45 +68,34 @@ async function pickAnyTaxId(token) {
   return r.data?.data?.[0]?.id || null;
 }
 
-/**
- * Resolve a valid Shopware taxId using multiple strategies:
- * 1) caller-provided id (validated)
- * 2) env-provided id (validated)
- * 3) by configured name
- * 4) by common rates (e.g., 19, 7)
- * 5) any existing tax (highest rate first)
- * Result is cached in-memory.
- */
-export async function resolveTaxId(taxId) {
+export async function resolveTaxId(taxId, token) {
   if (_taxCacheId) return _taxCacheId;
+  if (!token) throw new Error("resolveTaxId: missing access token");
 
-  const { access_token } = await getValidAccessToken();
-
-  if (taxId && (await validateTaxId(taxId, access_token))) {
+  if (taxId && (await validateTaxId(taxId, token))) {
     _taxCacheId = taxId;
     return _taxCacheId;
   }
-  if (TAX_ENV_ID && (await validateTaxId(TAX_ENV_ID, access_token))) {
+  if (TAX_ENV_ID && (await validateTaxId(TAX_ENV_ID, token))) {
     _taxCacheId = TAX_ENV_ID;
     return _taxCacheId;
   }
-  const byName = await searchTaxIdByName(TAX_PREFERRED_NAME, access_token);
+  const byName = await searchTaxIdByName(TAX_PREFERRED_NAME, token);
   if (byName) {
     _taxCacheId = byName;
     return _taxCacheId;
   }
   for (const rate of TAX_FALLBACK_RATES) {
-    const byRate = await searchTaxIdByRate(rate, access_token);
+    const byRate = await searchTaxIdByRate(rate, token);
     if (byRate) {
       _taxCacheId = byRate;
       return _taxCacheId;
     }
   }
-  const any = await pickAnyTaxId(access_token);
+  const any = await pickAnyTaxId(token);
   if (any) {
     _taxCacheId = any;
     return _taxCacheId;
   }
-
   throw new Error("No taxId provided and no tax entity could be resolved");
 }

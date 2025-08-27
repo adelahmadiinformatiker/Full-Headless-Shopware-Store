@@ -13,6 +13,16 @@ const API_BASE = `http://localhost:${
 
 function initMediaSlots() {
   const mediaPreviewContainer = document.getElementById("mediaPreview");
+  console.log("STEP 4: initMediaSlots", {
+    total: PRESELECTED_MEDIA.length,
+    cover: PRESELECTED_MEDIA[0],
+    grid: PRESELECTED_MEDIA.slice(1),
+  });
+
+  if (!mediaPreviewContainer) {
+    return;
+  }
+  mediaPreviewContainer.innerHTML = "";
 
   if (PRESELECTED_MEDIA.length > 0) {
     const cover = PRESELECTED_MEDIA[0];
@@ -40,7 +50,7 @@ function initMediaSlots() {
   row.className =
     "row row-cols-2 row-cols-sm-3 h-100 row-cols-md-4 g-3 align-items-start";
 
-  for (let i = 0; i < MAX_SLOTS; i++) {
+  for (let i = 1; i <= MAX_SLOTS; i++) {
     const imageObj = PRESELECTED_MEDIA[i] || null;
     const imageUrl = imageObj ? imageObj.url : null;
 
@@ -127,16 +137,27 @@ function removeImage(index) {
   initMediaSlots(); // UI neu rendern
 }
 
-if (isEditMode && productId) {
-  const product = await fetchProduct(productId);
-  fillFormWithData(product, form, PRESELECTED_MEDIA);
-}
+// expose handlers for inline onclick in generated HTML
+window.setAsCover = setAsCover;
+window.removeImage = removeImage;
 
 async function fetchProduct(id) {
   if (!id) throw new Error("Kein Produkt-ID übergeben (Edit-Modus erwartet).");
   const res = await fetch(`${API_BASE}/api/products/${id}`);
   if (!res.ok) throw new Error("Produkt nicht gefunden.");
-  return await res.json();
+  const json = await res.json();
+  const product = json?.data ?? json; // unwrap {success,data} → product
+  console.log("STEP 2: fetchProduct → unwrapped product:", {
+    id: product.id,
+    media: product.media,
+    cover: product.cover,
+  });
+  console.log(
+    "STEP 2.1: product media urls:",
+    (product.media || []).map((m) => m.url)
+  );
+
+  return product;
 }
 
 form.onsubmit = async function (e) {
@@ -171,6 +192,8 @@ form.onsubmit = async function (e) {
       isCover: index === coverIndex,
     })),
   };
+
+  console.log("➡️ Sending payload to backend:", body);
 
   const coverImage = PRESELECTED_MEDIA[coverIndex]?.mediaId;
   if (coverImage) {
@@ -217,8 +240,6 @@ function fillDummyData() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("[STEP 1] DOMContentLoaded gestartet");
-
   const submitBtn = form.querySelector("button[type='submit']");
   if (submitBtn) {
     submitBtn.textContent = isEditMode
@@ -227,22 +248,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (isEditMode && productId) {
-    console.log("[STEP 2] Edit-Modus erkannt – Produktdaten werden geladen");
     try {
+      console.log("STEP 1: Edit mode detected, fetching productId=", productId);
       const produkt = await fetchProduct(productId);
-      console.log("[STEP 3] Produktdaten erfolgreich geladen:", produkt);
-      // امضای صحیح با فرم و آرایه مدیا
+
+      console.log("DBG: produkt.media before fill:", produkt?.media);
+
       fillFormWithData(produkt, form, PRESELECTED_MEDIA);
+      // render media slots now that PRESELECTED_MEDIA is populated
+      initMediaSlots();
     } catch (err) {
       console.error("[ERROR] Produkt konnte nicht geladen werden:", err);
-      // (اختیاری) نمایش پیام خطا در UI
-      // showFormAlert("danger", "Produkt konnte nicht geladen werden.");
     }
-    return; // در حالت ویرایش، از اینجا خارج شو
+    return;
   }
-
-  // Create-Mode
-  console.log("[STEP 2] Create-Modus erkannt – Demodaten werden verwendet");
 
   PRESELECTED_MEDIA.push(
     {
@@ -251,11 +270,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
     {
       url: "http://shopware.local/thumbnail/01/cb/24/1754042050/product02_280x280.png?ts=1754042064",
-      mediaId: "0198650ddfa670dbac098a1992f3431a",
+      mediaId: "0198650da1a97fe291f0f63f34c5a686",
     }
   );
 
-  console.log("[STEP 3] Demodaten gesetzt, initMediaSlots wird aufgerufen");
   initMediaSlots();
-  fillDummyData(); // اگر پارامتر می‌گیرد، اینجا مطابق امضایش تغییر بده
+  fillDummyData();
 });

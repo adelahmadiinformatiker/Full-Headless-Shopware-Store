@@ -1,19 +1,29 @@
 // management/frontend/public/assets/js/form-fill-helpers.js
 
 // generic helpers
+const ctrl = (f, name) =>
+  typeof f.namedItem === "function" ? f.namedItem(name) : f[name];
+
 export const setVal = (f, name, val) => {
-  if (f[name]) f[name].value = val ?? "";
+  const el = ctrl(f, name);
+  if (el && "value" in el) el.value = val ?? "";
 };
+
 export const setChecked = (f, name, val, fallback = false) => {
-  if (f[name]) f[name].checked = (val ?? fallback) === true;
+  const el = ctrl(f, name);
+  if (el && "checked" in el) el.checked = (val ?? fallback) === true;
 };
+
 export const setMultiSelect = (f, name, values) => {
-  if (!f[name] || !Array.isArray(values)) return;
-  Array.from(f[name].options).forEach((opt) => {
+  const el = ctrl(f, name);
+  if (!el || !Array.isArray(values)) return;
+  Array.from(el.options).forEach((opt) => {
     opt.selected = values.includes(opt.value);
   });
 };
+
 export const toCSV = (arr) => (Array.isArray(arr) ? arr.join(", ") : "");
+
 export const toDateInput = (iso) => (iso ? String(iso).slice(0, 10) : "");
 
 // media preselect
@@ -87,8 +97,8 @@ export function fillFormWithData(product, form, PRESELECTED_MEDIA) {
   setMultiSelect(f, "salesChannels", product.salesChannels);
 
   preselectMedia(product, PRESELECTED_MEDIA);
-
-  requestAnimationFrame(() => {
-    initMediaSlots();
-  });
+  console.log(
+    "STEP 3: PRESELECTED_MEDIA after preselectMedia:",
+    PRESELECTED_MEDIA
+  );
 }

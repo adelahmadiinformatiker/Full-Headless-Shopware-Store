@@ -64,7 +64,6 @@ function renderProductTable(products) {
     const res = await fetch(`http://localhost:${serverPort}/api/products`, {
       cache: "no-store",
     });
-    console.log("Lade Produkte von:", res.url);
 
     if (!res.ok) {
       // fixed missing quote in class:
@@ -80,7 +79,6 @@ function renderProductTable(products) {
     const json = await res.json();
     const products = Array.isArray(json) ? json : json.data || [];
 
-    // پیام‌ها در listBox، جدول در tableEl
     tableEl.innerHTML = renderProductTable(products);
     setupCheckboxHandlers();
   } catch (err) {
@@ -139,6 +137,7 @@ function setupCheckboxHandlers() {
       const id = row?.dataset?.id;
       if (id) {
         window.location.href = `product-form.html?id=${id}`;
+        console.log("➡️ Navigated to Edit Mode with id=", id);
       }
     });
   });
