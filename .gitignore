@@ -1,14 +1,25 @@
-# Ignore installed packages
-node_modules/
+# 📦 Node.js dependencies
 **/node_modules/
 
-# Secret configuration file
-external-node-layer/club-manager-sync/.env
+# 🔐 Environment files (all .env anywhere in the project)
+**/.env
+**/.env.*
 
-# System and IDE-related outputs
+# 🧪 Test coverage
+coverage/
+
+# 🏗️ Build outputs
+build/
+dist/
+
+# 🖥️ System and IDE-related files
 .DS_Store
 *.log
-.env
-dist/
-build/
-coverage/
+*.zip
+
+# 💻 VSCode settings (optional)
+.vscode/
+
+# 🧹 OS-specific temp files
+Thumbs.db
+ehthumbs.db

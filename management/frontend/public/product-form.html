@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Produkt anlegen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <style>
+    /* Einheitliche Höhe für alle Karten */
+    .equal-height-cards .col {
+      display: flex;
+    }
+
+    .equal-height-cards .card {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .equal-height-cards .card-body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 170px;
+      /* gleiche Mindesthöhe für alle Karten */
+    }
+
+    /* Zusätzlicher Abstand innerhalb der Karten */
+    .card-body {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+    }
+
+    /* Einheitliches Styling für alle Vorschaubilder */
+    #mediaPreviewContainer img {
+      max-width: 120px;
+      max-height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      background: #f8f9fa;
+      margin: auto;
+      display: block;
+    }
+
+    /* Platzhalter-Wrapper – optional */
+    .media-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Produkt anlegen (Create) -->
+  <div class="container mt-5">
+    <div class="d-flex justify-content-end mb-3">
+      <a href="product-admin.html" class="btn btn-outline-primary">
+        <span class="me-2">&larr;</span>Zurück zur Übersicht
+      </a>
+    </div>
+    <!-- Allgemeine -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-primary text-white">Allgemeine</div>
+      <div class="card-body">
+        <form id="productForm">
+          <!-- Allgemeine Informationen -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">Allgemeine Informationen</div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="productName">
+                    Produktname <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" id="productName" name="name"
+                    placeholder="Produktname eingeben..." required />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label" for="manufacturer">Hersteller</label>
+                  <input type="text" class="form-control" id="manufacturer" name="manufacturer"
+                    placeholder="Herstellername" />
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="productNumber">
+                    Produktnummer <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" id="productNumber" name="productNumber"
+                    placeholder="z.B. SW10000" required />
+                </div>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label" for="description">Beschreibung</label>
+                <textarea class="form-control" id="description" name="description" rows="1"
+                  placeholder="Produktbeschreibung..." style="min-height: 140px">
+Dies ist ein Dummy-Testprodukt für Shopware Headless.</textarea>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <div class="form-check form-switch m-2">
+                    <input class="form-check-input" type="checkbox" id="highlight" name="highlight" checked />
+                    <label class="form-check-label" for="highlight">Highlight-Produkt</label>
+                  </div>
+                </div>
+                <div class="col-md-6"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Details -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">Preise</div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="taxId">Steuersatz (Tax rate)</label>
+                  <select class="form-select" id="taxId" name="taxId" required>
+                    <option value="">Bitte wählen...</option>
+                    <option value="0197c5bdb03e712ea3556590f1f7c355" selected>
+                      Standard rate
+                    </option>
+                    <option value="eec2e1c3e3e74b2e8e6c1e2b7b2b1c1a">
+                      Reduced rate
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="priceGross">Price (gross)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="priceGross" name="priceGross" step="0.01"
+                      placeholder="Enter gross price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="priceNet">Price (net)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="priceNet" name="priceNet" step="0.01"
+                      placeholder="Enter net price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="purchasePriceGross">Purchase price (gross)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="purchasePriceGross" name="purchasePriceGross"
+                      step="0.01" placeholder="Enter gross price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="purchasePriceNet">Purchase price (net)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="purchasePriceNet" name="purchasePriceNet" step="0.01"
+                      placeholder="Enter net price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="listPriceGross">List price (gross)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="listPriceGross" name="listPriceGross" step="0.01"
+                      placeholder="Enter gross price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="listPriceNet">List price (net)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="listPriceNet" name="listPriceNet" step="0.01"
+                      placeholder="Enter net price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="cheapestPriceGross">Cheapest price (last 30 days, gross)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="cheapestPriceGross" name="cheapestPriceGross"
+                      step="0.01" placeholder="Enter gross price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="cheapestPriceNet">Cheapest price (last 30 days, net)</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="cheapestPriceNet" name="cheapestPriceNet" step="0.01"
+                      placeholder="Enter net price..." />
+                    <span class="input-group-text">€</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Erweiterte Details -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">Erweiterte Informationen</div>
+            <div class="card-body">
+              <!-- EAN und Lieferzeit -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="ean">EAN (Barcode)</label>
+                  <input type="text" class="form-control" name="ean" placeholder="EAN-Nummer eingeben..." />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="deliveryTimeId">Lieferzeit</label>
+                  <select class="form-select" name="deliveryTimeId">
+                    <option value="">Bitte wählen...</option>
+                    <option value="short-time">1-2 Werktage</option>
+                    <option value="medium-time">3-5 Werktage</option>
+                    <option value="long-time">1-2 Wochen</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Maße -->
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <label class="form-label" for="width">Breite (cm)</label>
+                  <input type="number" class="form-control" name="width" step="0.1" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="height">Höhe (cm)</label>
+                  <input type="number" class="form-control" name="height" step="0.1" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="length">Länge (cm)</label>
+                  <input type="number" class="form-control" name="length" step="0.1" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="weight">Gewicht (kg)</label>
+                  <input type="number" class="form-control" name="weight" step="0.01" />
+                </div>
+              </div>
+
+              <!-- SEO -->
+              <div class="mb-3">
+                <label class="form-label" for="metaTitle">Meta Title</label>
+                <input type="text" class="form-control" name="metaTitle" placeholder="Meta-Titel für SEO..." />
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="metaDescription">Meta Description</label>
+                <textarea class="form-control" name="metaDescription" rows="2"
+                  placeholder="Kurzbeschreibung für Suchmaschinen..."></textarea>
+              </div>
+            </div>
+          </div>
+          <!-- Lieferbarkeit -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">Lieferbarkeit</div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label" for="stock">Lagerbestand</label>
+                  <input type="number" class="form-control" id="stock" name="stock" placeholder="Menge auf Lager..."
+                    min="0" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="availableStock">Verfügbarer Bestand</label>
+                  <input type="number" class="form-control" id="availableStock" name="availableStock"
+                    placeholder="Verfügbar..." disabled />
+                </div>
+                <div class="col-md-4 d-flex align-items-center">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="isCloseout" name="isCloseout" />
+                    <label class="form-check-label ms-2" for="isCloseout">Abverkauf (Clearance sale)</label>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label" for="deliveryTimeId">Lieferzeit</label>
+                  <select class="form-select" id="deliveryTimeId" name="deliveryTimeId">
+                    <option value="">Bitte wählen...</option>
+                    <option value="short-time">1-2 Werktage</option>
+                    <option value="medium-time">3-5 Werktage</option>
+                    <option value="long-time">1-2 Wochen</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="restockTime">Wiederauffüllzeit (Tage)</label>
+                  <input type="number" class="form-control" id="restockTime" name="restockTime"
+                    placeholder="Tage bis Nachschub..." min="0" />
+                </div>
+                <div class="col-md-4 d-flex align-items-center">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="freeShipping" name="freeShipping" />
+                    <label class="form-check-label ms-2" for="freeShipping">Versandkostenfrei</label>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label" for="minPurchase">Mindestbestellmenge</label>
+                  <input type="number" class="form-control" id="minPurchase" name="minPurchase"
+                    placeholder="Mind. Menge..." min="1" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="purchaseSteps">Kaufintervall</label>
+                  <input type="number" class="form-control" id="purchaseSteps" name="purchaseSteps"
+                    placeholder="Intervall..." min="1" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="maxPurchase">Maximalbestellmenge</label>
+                  <input type="number" class="form-control" id="maxPurchase" name="maxPurchase"
+                    placeholder="Max. Menge..." min="1" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Sichtbarkeit & Struktur -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">Sichtbarkeit & Struktur</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label" for="salesChannels">Sales Channels</label>
+                <select class="form-select" name="salesChannels" multiple>
+                  <option value="storefront">Storefront</option>
+                  <option value="api">API</option>
+                </select>
+                <div class="form-check form-switch m-2">
+                  <input class="form-check-input" type="checkbox" id="activeAllSalesChannels"
+                    name="activeAllSalesChannels" checked />
+                  <label class="form-check-label" for="activeAllSalesChannels">Für alle ausgewählten Sales Channels
+                    aktiv</label>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="category">Kategorie</label>
+                <input type="text" class="form-control" name="category" placeholder="Kategorie auswählen..." />
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="tags">Tags</label>
+                <input type="text" class="form-control" name="tags"
+                  placeholder="Tags eingeben... (mit Komma getrennt)" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="searchKeywords">Suchbegriffe</label>
+                <input type="text" class="form-control" name="searchKeywords"
+                  placeholder="Suchbegriffe für dieses Produkt..." />
+              </div>
+            </div>
+          </div>
+          <!-- Labelling -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">Labelling</div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label class="form-label" for="releaseDate">Release date</label>
+                  <input type="date" class="form-control" id="releaseDate" name="releaseDate"
+                    placeholder="YYYY-MM-DD" />
+                  <div class="form-text m-2">UTC</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="gtin">GTIN/EAN</label>
+                  <input type="text" class="form-control" id="gtin" name="gtin" placeholder="Enter GTIN/EAN..." />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="manufacturerProductNumber">Manufacturer product number</label>
+                  <input type="text" class="form-control" id="manufacturerProductNumber"
+                    name="manufacturerProductNumber" placeholder="Enter product number..." />
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Medien -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">Medien</div>
+            <div class="card-body">
+              <!-- Dropzone -->
+              <div id="mediaDropzone" class="border border-secondary border-dashed rounded p-4 text-center mb-3"
+                style="cursor: pointer">
+                <p class="mb-2">
+                  <strong>Dateien hierherher ziehen</strong> oder klicken zum
+                  Auswählen
+                </p>
+                <button type="button" class="btn btn-primary me-2" id="openMedia">
+                  Open media
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="uploadFile">
+                  Upload file
+                </button>
+                <input type="file" id="mediaInput" multiple accept="image/*" hidden />
+              </div>
+
+              <!-- Vorschau-Bereich für Medien -->
+              <div class="row g-3 equal-height-cards" id="mediaPreview">
+                <!-- Spalten werden durch JS generiert -->
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100"></button>
+        </form>
+        <!-- Serverantwort als Alert anzeigen -->
+        <div id="createResponseBox" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="assets/js/product-form.js"></script>
+
+</body>
+
+</html>

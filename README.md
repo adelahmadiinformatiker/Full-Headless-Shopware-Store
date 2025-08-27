@@ -4,6 +4,36 @@
 
 # 📘 README: Local Domain & SSH Setup for Shopware (`shopware.local`)
 
+### 1) Backend
+
+```bash
+cd management/backend
+npm i
+# Ensure .env (e.g., PORT=3001) is set
+
+# Start normally
+npm start
+# or
+node index.js
+
+# (Optional) Development mode with auto-restart
+npm i -D nodemon
+npm run dev
+
+# Health check → http://localhost:3001/  (should show: "Backend is running")
+```
+
+### 2) Frontend (Admin UI)
+
+```bash
+cd management/frontend
+npm i
+npm run dev
+# Open → http://localhost:3002/
+```
+
+---
+
 ## 🛠 Additional Notes (Find Your VM IP First!)
 
 Before any configuration, you need your Ubuntu VM's current IP address. This IP is required for SSH access and for mapping the local domain on your Windows client.
@@ -292,23 +322,50 @@ If everything is configured correctly, the Shopware Admin panel should load.
 ## 📦 Project Structure
 
 ```
-external-node-layer/
-  club-manager-sync/
-    server.js           # Express backend (API endpoints)
-    shopwareClient.js   # Shopware API integration logic
-    .env                # Environment variables
-    ui/                 # Frontend (Bootstrap 5, modular CRUD UI)
+management/
+  backend/
+    index.js
+    routes/
+      product.routes.js
+    services/
+      product.service.js
+    utils/
+      validAccessToken.js
+      taxResolver.js
+      manufacturer.js
+      normalizePrice.js
+    .env
+  frontend/
+    public/
       index.html
       pages/
         product-admin.html
-        product-form.js
-      assets/js/
-        product-admin.js
-        product-form.js
+        product-form.html
+      assets/
+        js/
+          product-admin.js
+          product-form.js
+          form-fill-helpers.js
+      images/
 ```
 
-- **Backend:** All API logic and Shopware integration is in `external-node-layer/club-manager-sync/`.
-- **Frontend:** All UI files are in `ui/` and subfolders. Each CRUD operation has its own page.
+- **Backend** (Express + Shopware Admin API integration): `management/backend`
+- **Admin UI** (Bootstrap pages + modular JS): `management/frontend/public`
+
+---
+
+## ⚙️ Environment Variables Reference _(update variable names to match code)_
+
+| Variable               | Description                                     | Example                     |
+| ---------------------- | ----------------------------------------------- | --------------------------- |
+| PORT                   | Backend port                                    | `3001`                      |
+| SHOPWARE_API_BASE      | **Base Admin API URL** used by the backend code | `http://shopware.local/api` |
+| SHOPWARE_CLIENT_ID     | Shopware Integration “Access key ID”            | `swiaaaaaaaaaaaaaa`         |
+| SHOPWARE_CLIENT_SECRET | Shopware Integration “Secret access key”        | `swsaBBBBBBBBBBBBB`         |
+| ENABLE_SERVER_LOGS     | Backend verbose logging                         | `true`                      |
+
+> **Why change?** The backend uses `process.env.SHOPWARE_API_BASE` in `product.service.js`.  
+> Keep the README aligned with the code to avoid misconfiguration.
 
 ---
 
@@ -455,24 +512,6 @@ frontend-headless/
 
 ---
 
-## 🚀 How to Start the Project
-
-1. Install dependencies (if any):
-   ```bash
-   npm install
-   ```
-2. Start the backend server:
-   ```bash
-   node external-node-layer/club-manager-sync/server.js
-   # or use npm start if defined
-   ```
-3. Open the UI in your browser:
-   ```
-   http://localhost:5000/ui
-   ```
-
----
-
 ## 🖥️ Frontend Usage & Navigation
 
 - The UI is built with Bootstrap 5 for a clean, professional look.
@@ -494,17 +533,19 @@ frontend-headless/
 
 ---
 
-## 🔗 API Endpoints Overview
+## 🔗 API Endpoints Overview _(reflect current routes used by the Admin UI)_
 
-| Endpoint        | Method | Description                      |
-| --------------- | ------ | -------------------------------- |
-| /create-product | POST   | Create a new product in Shopware |
-| /product/:id    | GET    | Get product details by ID        |
-| /product/:id    | PUT    | Update product by ID             |
-| /product/:id    | DELETE | Delete product by ID             |
-| /products       | GET    | List products (with pagination)  |
+| Endpoint                       | Method | Purpose                           |
+| ------------------------------ | ------ | --------------------------------- |
+| `/api/products`                | GET    | List products                     |
+| `/api/products/:id`            | GET    | Get a product                     |
+| `/api/products/create-product` | POST   | Create a product (cover optional) |
+| `/api/products/:id`            | PUT    | Update a product                  |
+| `/api/products/:id`            | DELETE | Delete a product                  |
 
-All endpoints expect/return JSON. See `server.js` for details.
+**Client configuration note:**  
+The Admin UI reads `serverPort` from `localStorage` (fallback `3001`).  
+Example base URL used in the UI: `http://localhost:${serverPort}`
 
 ---
 
@@ -519,36 +560,42 @@ All endpoints expect/return JSON. See `server.js` for details.
 
 ---
 
-## 🛠️ Logging & Debugging
+## 🔎 Logging & Debugging Flow _(add precise checkpoints)_
 
-- Set `ENABLE_SERVER_LOGS=true` in `.env` to enable detailed backend logging.
-- All API requests, responses, and errors are logged to the console for easier debugging.
-- If you encounter issues, check the logs for full request/response details.
+Enable backend logs:
 
----
+```env
+ENABLE_SERVER_LOGS=true
+```
 
-## 🧩 How to Extend or Customize
+Suggested client-side checkpoints (Admin UI):
 
-- **Add or modify product fields:**
+```js
+// 1) On DOM ready (edit mode detection)
+console.log("[UI] Edit mode?", isEditMode, "id:", productId);
 
-  - Edit the shared form in `ui/pages/product-form.html`.
-  - Update corresponding logic in `ui/assets/js/product-form.js` to handle new inputs for both create and update modes.
-  - Adjust the backend in `server.js` (especially the `/create-product` and `/update-product` routes).
-  - Update `createProduct` and `updateProduct` functions in `shopwareClient.js` to handle new field mappings.
+// 2) After fetchProduct
+console.log("[UI] Loaded product:", produkt?.id);
+console.log(
+  "[UI] Media urls:",
+  (produkt?.media || []).map((m) => m.url)
+);
 
-- **Extend backend functionality (e.g. new routes or logic):**
+// 3) After fillFormWithData (preselect)
+console.log("[UI] PRESELECTED_MEDIA:", PRESELECTED_MEDIA);
 
-  - Add Express routes in `server.js`.
-  - Implement business logic or Shopware API calls in `shopwareClient.js`.
+// 4) Before rendering grid
+console.log("[UI] Cover:", PRESELECTED_MEDIA[0]);
+console.log("[UI] Grid:", PRESELECTED_MEDIA.slice(1));
+```
 
-- **Change or enhance the UI design:**
+Key backend checkpoints:
 
-  - Modify `ui/pages/` HTML files.
-  - All layouts use Bootstrap 5 with modular CSS and fully responsive grid structure (e.g. for image management, dynamic media slots).
-
-- **Customize product behavior:**
-  - Use `product-admin.js` for listing, selection, and delete logic.
-  - Use `product-form.js` to control form mode (create/edit), media handling (image upload, cover selection), and form validation.
+```js
+// product.service.js
+console.log("getProductById → media:", product.media);
+console.log("getProductById → cover:", product.cover);
+```
 
 ---
 
@@ -572,10 +619,9 @@ To work with the Shopware Admin API, you must generate a valid access token (JWT
 
 **You do NOT need to manually refresh the token.**
 
-The backend code (see `external-node-layer/club-manager-sync/shopwareClient.js`) automatically requests a new token if the current one is expired. This is handled by the function:
+The backend code (see `??????????`) automatically requests a new token if the current one is expired. This is handled by the function:
 
 ```js
-// shopwareClient.js
 export async function getValidAccessToken() {
   // ...existing code...
 }
@@ -594,7 +640,6 @@ and always ensures a valid token is used for all API requests.
 When creating a product, the backend checks if the given `manufacturerId` exists. If not, it automatically creates a new manufacturer and uses its ID. This logic is implemented in:
 
 ```js
-// shopwareClient.js
 async function createProduct({ ... }) {
   // ...existing code...
   let validManufacturerId = manufacturerId;
