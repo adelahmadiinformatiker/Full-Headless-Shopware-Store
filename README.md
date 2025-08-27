@@ -4,6 +4,8 @@
 
 # 📘 README: Local Domain & SSH Setup for Shopware (`shopware.local`)
 
+## Run Management (Backend & Admin UI)
+
 ### 1) Backend
 
 ```bash
@@ -31,6 +33,43 @@ npm i
 npm run dev
 # Open → http://localhost:3002/
 ```
+
+---
+
+## 🔎 Viewing All Backend API Endpoints
+
+During development it is often useful to see which API endpoints are available in the Backend-for-Frontend (BFF).  
+We added a special **debug route** for this purpose:
+
+### 1. Start the BFF
+
+```bash
+cd backend
+npm run dev
+```
+
+### 2. Open the routes overview
+
+Visit the following URL in your browser or API client (e.g. Postman):
+
+```bash
+http://localhost:4000/api/_routes
+```
+
+### 3. Example Response
+
+You will get a JSON list of all mounted routes, including their HTTP methods:
+
+```bash
+[
+  { "path": "/api/auth/login", "methods": ["POST"] },
+  { "path": "/api/products", "methods": ["GET"] },
+  { "path": "/api/cart/items", "methods": ["POST", "DELETE"] },
+  { "path": "/api/checkout/cart", "methods": ["GET", "POST"] }
+]
+```
+
+This makes it easy to verify which endpoints are exposed by the backend and how the frontend (Storefront) should call them.
 
 ---
 

@@ -1,0 +1,190 @@
+/* AUTH SECTION: Bootstrap grid and utility classes for Login/Register */
+.auth-container-fluid {
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+.auth-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+.auth-col-md-6 {
+  position: relative;
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+@media (min-width: 768px) {
+  .auth-col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+  .auth-d-md-block {
+    display: block !important;
+  }
+  /* .auth-d-none {
+    display: none !important;
+  } */
+}
+.auth-d-flex {
+  display: flex !important;
+}
+.auth-justify-content-center {
+  justify-content: center !important;
+}
+.auth-justify-content-between {
+  justify-content: space-between !important;
+}
+.auth-align-items-center {
+  align-items: center !important;
+}
+.auth-min-vh-100 {
+  min-height: 100vh !important;
+}
+.auth-shadow {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+.auth-p-3 {
+  padding: 1rem !important;
+}
+.auth-p-4 {
+  padding: 1.5rem !important;
+}
+.auth-rounded {
+  border-radius: 0.25rem !important;
+}
+.auth-mb-3 {
+  margin-bottom: 1rem !important;
+}
+.auth-mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+.auth-mt-3 {
+  margin-top: 1rem !important;
+}
+.auth-mt-4 {
+  margin-top: 1.5rem !important;
+}
+.auth-position-absolute {
+  position: absolute !important;
+}
+.auth-w-100 {
+  width: 100% !important;
+}
+.auth-text-center {
+  text-align: center !important;
+}
+.auth-text-muted {
+  color: #6c757d !important;
+}
+.auth-text-primary {
+  color: #007bff !important;
+}
+.auth-small {
+  font-size: 80%;
+}
+.auth-form-group {
+  margin-bottom: 1rem;
+}
+.auth-input {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.auth-input:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+.auth-btn {
+  display: inline-block;
+  font-weight: 400;
+  color: #212529;
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+  background-color: transparent;
+  border: 1px solid transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-radius: 0.25rem;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.auth-btn-block {
+  display: block;
+  width: 100%;
+}
+.primary-btn {
+  color: #fff;
+  background-color: #d10024;
+  border-color: #d10024;
+}
+.primary-btn:hover,
+.primary-btn:focus {
+  color: #fff;
+  background-color: #a8001a;
+  border-color: #a8001a;
+}
+.auth-btn-close {
+  box-sizing: content-box;
+  width: 1em;
+  height: 1em;
+  padding: 0.25em 0.25em;
+  color: #000;
+  background: transparent
+    url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath d='M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e")
+    center/1em auto no-repeat;
+  border: 0;
+  border-radius: 0.25rem;
+  opacity: 0.5;
+  cursor: pointer;
+}
+.auth-btn-close:hover {
+  opacity: 0.75;
+}
+.auth-alert {
+  position: relative;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+}
+.auth-alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+/* Special for auth image */
+.auth-col-md-6.auth-d-none.auth-d-md-block.ai-style-change-3 {
+  min-height: 300px;
+  background-image: url("https://placehold.co/600x400");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.auth-img-placeholder {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  min-height: 300px;
+}
+.input-checkbox.auth-mb-0 {
+  margin-bottom: 0 !important;
+}
