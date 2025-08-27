@@ -1,0 +1,24 @@
+{
+  "name": "storefront-bff",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "dev:inspect": "nodemon --inspect=9229 index.js",
+    "start": "node index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-list-endpoints": "^7.1.1",
+    "morgan": "^1.10.0"
+  }
+}
